@@ -2,6 +2,7 @@ from transformers import PreTrainedModel, PretrainedConfig
 from transformers.utils import ModelOutput 
 from dataclasses import dataclass, fields
 from typing import Dict
+from torch import nn
 
 @dataclass
 class ModelConfig(PretrainedConfig):
@@ -15,7 +16,7 @@ class ModelConfig(PretrainedConfig):
 
 class Model(PreTrainedModel):
     def __init__(self, config: ModelConfig):
-        super().__init__(self, config=config)
+        nn.Module.__init__(self)
         self.config = config
     def forward(self, x: Dict) -> ModelOutput:
         pass

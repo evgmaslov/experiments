@@ -8,7 +8,7 @@ from diffusers import UNet3DConditionModel, DDPMScheduler
 import matplotlib.pyplot as plt
 from tqdm.notebook import tqdm
 import numpy as np
-from typing import Dict
+from typing import Dict, Union
 
 class DiffusersDDPM3D(Model):
   def __init__(self, config: DiffusionConfig):
@@ -63,3 +63,10 @@ class DiffusersDDPM3D(Model):
         ax = fig.add_subplot(projection='3d')
         ax.voxels(sample, facecolors=color)
       plt.show()
+  @staticmethod
+  def from_pretrained(pretrained_model_name_or_path, *model_args, config = None, cache_dir = None, 
+                      ignore_mismatched_sizes = False, force_download = False, local_files_only = False, 
+                      token = None, revision = 'main', use_safetensors = None, **kwargs ):
+    model = DiffusersDDPM3D(config)
+    model.eps_model = UNet3DConditionModel.from_pretrained(pretrained_model_name_or_path)
+    return model

@@ -51,7 +51,7 @@ class Method():
 
 class MLMethod(Method):
     def __init__(self, config: MLMethodConfig):
-        super().__init__(self, config)
+        super().__init__(config)
         self.converter_type = STRING_TO_CONVERTER.get(config.data_config.converter_type, None)
         self.model_type = STRING_TO_MODEL.get(config.model_config.type, None)
 
@@ -77,7 +77,7 @@ class MLMethod(Method):
         if step_name == "prepare_data":
             self.dataset = load_dataset(self.config.data_config.path).with_format("torch")
         elif step_name == "train":
-            self.model = self.config.model_config.type.from_pretrained(self.config.model_config.path)
+            self.model = self.model_type.from_pretrained(self.config.model_config.path, config=self.config.model_config)
             
     def save_step(self, path: str, step_name: str, save_to: str = "hub"):
         super().save_step(path, step_name)
