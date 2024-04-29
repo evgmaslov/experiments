@@ -9,6 +9,8 @@ from .base import Converter, Printer
 class DataConfig:
     name: str
     path: str
+    split: float = 0.2
+    use_size: float = 1.0
     converter_type: str
 
     def to_dict(self):

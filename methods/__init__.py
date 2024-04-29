@@ -75,7 +75,7 @@ class MLMethod(Method):
     def load_step(self, path: str, step_name: str, load_from: str = "hub"):
         super().load_step(path, step_name)
         if step_name == "prepare_data":
-            self.dataset = load_dataset(self.config.data_config.path).with_format("torch")
+            self.load_data()
         elif step_name == "train":
             self.model = self.model_type.from_pretrained(self.config.model_config.path, config=self.config.model_config)
             
@@ -94,19 +94,23 @@ class MLMethod(Method):
     def prepare_data(self):
         converter = self.data_converter()
         self.dataset = converter(**self.config.task_config.data)
+        self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
+    def load_data(self):
+        self.dataset = load_dataset(self.config.data_config.path).with_format("torch")
+        if not isinstance(self.dataset, datasets.dataset_dict.DatasetDict):
+            self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
+        new_count = int(len(self.dataset["train"])*self.config.data_config.use_size)
+        for split in self.dataset.keys():
+            self.dataset[split] = self.dataset[split][:new_count]
     
     def train(self):
-        resume_from_checkpoint = False
-        if self.model != None:
-            self.config.train_config.output_dir = self.config.model_config.path
-            resume_from_checkpoint = True
-        else:
+        if self.model == None:
             self.model = self.model_type(self.config.model_config)
         
         self.trainer = Trainer(
             model=self.model,
             args=self.config.train_config,
             train_dataset=self.dataset["train"],
-            eval_dataset=self.dataset["val"]
+            eval_dataset=self.dataset["test"]
         )
-        self.trainer.train(resume_from_checkpoint=resume_from_checkpoint)
+        self.trainer.train()

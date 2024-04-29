@@ -1,5 +1,7 @@
 {
     "name":"Polycristal dataset",
     "path":"evgmaslov/polycrystal_3d",
-    "converter_type":"TesrConverter"
+    "converter_type":"TesrConverter",
+    "split":0.1,
+    "use_size":1
 }
