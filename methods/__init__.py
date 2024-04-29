@@ -1,11 +1,12 @@
 from tasks import TaskInput, TaskOutput, TaskConfig, MLTaskConfig, STRING_TO_TASK_INPUT, STRING_TO_TASK_OUTPUT
 from dataclasses import dataclass, fields, field
 from typing import List, Any
-from nn.data import Converter, DataConfig, STRING_TO_CONVERTER
+from nn.data import Converter, DataConfig, STRING_TO_CONVERTER, STRING_TO_COLLATOR
 from nn.model import STRING_TO_MODEL
 from nn.model.base import ModelConfig
 from nn.train import TrainerConfig, Trainer
 from datasets import load_dataset
+from transformers import default_data_collator
 
 @dataclass
 class MethodConfig:
@@ -53,6 +54,7 @@ class MLMethod(Method):
     def __init__(self, config: MLMethodConfig):
         super().__init__(config)
         self.converter_type = STRING_TO_CONVERTER.get(config.data_config.converter_type, None)
+        self.collator_type = STRING_TO_COLLATOR.get(config.data_config.collator_config.type, None)
         self.model_type = STRING_TO_MODEL.get(config.model_config.type, None)
 
         assert self.converter_type != None, f"Converter type {config.data_config.converter_type} isn't registered."
@@ -106,11 +108,17 @@ class MLMethod(Method):
     def train(self):
         if self.model == None:
             self.model = self.model_type(self.config.model_config)
+
+        if self.collator_type != None:
+            collator = self.collator_type(self.config.data_config.collator_config)
+        else:
+            collator = None
         
         self.trainer = Trainer(
             model=self.model,
             args=self.config.train_config,
             train_dataset=self.dataset["train"],
-            eval_dataset=self.dataset["test"]
+            eval_dataset=self.dataset["test"],
+            data_collator=collator
         )
         self.trainer.train()
