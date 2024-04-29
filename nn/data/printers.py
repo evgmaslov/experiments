@@ -1,5 +1,5 @@
 from typing import Dict
-from . import Printer
+from .base import Printer
 import matplotlib.pyplot as plt
 import numpy as np
 

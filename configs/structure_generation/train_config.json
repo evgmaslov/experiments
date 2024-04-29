@@ -1,4 +1,5 @@
 {
+    "output_dir":"",
     "num_train_epochs":2,
     "tracker_type": "Tracker",
     "tracker_config": {

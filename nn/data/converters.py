@@ -1,4 +1,4 @@
-from . import Converter
+from .base import Converter
 from typing import Optional, List
 import os
 import torch

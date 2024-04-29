@@ -1,25 +1,9 @@
 import torch
 from typing import List, Any, Dict
 from dataclasses import dataclass, fields
-from methods import Method
 from collections import OrderedDict
-from generation import GenerationTaskInput, GenerationTaskOutput
-
-class TaskInput(OrderedDict):
-    def __getitem__(self, k):
-        if isinstance(k, str):
-            inner_dict = dict(self.items())
-            return inner_dict[k]
-        else:
-            return self.to_tuple()[k]
-
-class TaskOutput(OrderedDict):
-    def __getitem__(self, k):
-        if isinstance(k, str):
-            inner_dict = dict(self.items())
-            return inner_dict[k]
-        else:
-            return self.to_tuple()[k]
+from .generation import GenerationTaskInput, GenerationTaskOutput
+from .base import TaskInput, TaskOutput
 
 @dataclass
 class TaskConfig:
@@ -38,7 +22,7 @@ class MLTaskConfig(TaskConfig):
 class Task():
     def __init__(self, config: TaskConfig):
         self.config = config
-    def report(self, methods: List[Method]):
+    def report(self, methods: List):
         pass
 
 STRING_TO_TASK_INPUT = {

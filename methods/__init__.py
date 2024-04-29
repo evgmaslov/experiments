@@ -1,15 +1,16 @@
 from tasks import TaskInput, TaskOutput, TaskConfig, MLTaskConfig, STRING_TO_TASK_INPUT, STRING_TO_TASK_OUTPUT
-from dataclasses import dataclass, fields
-from typing import List
-from nn.data import Converter, DataConfig, STRING_TO_CONVERTER, STRING_TO_DATASET
-from nn.model import ModelConfig, STRING_TO_MODEL
+from dataclasses import dataclass, fields, field
+from typing import List, Any
+from nn.data import Converter, DataConfig, STRING_TO_CONVERTER
+from nn.model import STRING_TO_MODEL
+from nn.model.base import ModelConfig
 from nn.train import TrainerConfig, Trainer
 from datasets import load_dataset
 
 @dataclass
 class MethodConfig:
-    steps: List[str] = ["solve"]
-    task_config: TaskConfig
+    steps: list = field(default_factory=lambda: ["solve"])
+    task_config: TaskConfig = None
 
     def to_dict(self):
         d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
@@ -18,11 +19,11 @@ class MethodConfig:
 
 @dataclass
 class MLMethodConfig(MethodConfig):
-    steps: List[str] = ["prepare_data", "train", "solve"]
-    task_config: MLTaskConfig
-    data_config: DataConfig
-    model_config: ModelConfig
-    train_config: TrainerConfig
+    steps: list = field(default_factory=lambda: ["prepare_data", "train", "solve"])
+    task_config: MLTaskConfig = None
+    data_config: DataConfig = None
+    model_config: ModelConfig = None
+    train_config: TrainerConfig = None
 
     def to_dict(self):
         d = {
@@ -42,11 +43,11 @@ class Method():
     def solve(self, task_input: TaskInput) -> TaskOutput:
         pass
     def run_step(self, step_name: str):
-        assert step_name in self.config.steps, f"Step {step_name} not in method steps: {", ".join(self.config.steps)}"
+        assert step_name in self.config.steps, f"Step {step_name} not in method steps: {', '.join(self.config.steps)}"
     def load_step(self, path: str, step_name: str):
-        assert step_name in self.config.steps, f"Step {step_name} not in method steps: {", ".join(self.config.steps)}"
+        assert step_name in self.config.steps, f"Step {step_name} not in method steps: {', '.join(self.config.steps)}"
     def save_step(self, path: str, step_name: str):
-        assert step_name in self.config.steps, f"Step {step_name} not in method steps: {", ".join(self.config.steps)}"
+        assert step_name in self.config.steps, f"Step {step_name} not in method steps: {', '.join(self.config.steps)}"
 
 class MLMethod(Method):
     def __init__(self, config: MLMethodConfig):

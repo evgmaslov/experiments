@@ -1,4 +1,4 @@
-from nn.model import ModelConfig
+from .base import ModelConfig
 from typing import Tuple
 from dataclasses import dataclass
 

@@ -1,5 +1,5 @@
 from transformers.utils import ModelOutput
-from nn.model import ModelConfig, Model
+from nn.model.base import ModelConfig, Model
 from nn.model.configs import DiffusionConfig
 
 import torch

@@ -1,4 +1,4 @@
-from . import TaskInput, TaskOutput
+from .base import TaskInput, TaskOutput
 from dataclasses import dataclass
 from typing import Optional
 import torch

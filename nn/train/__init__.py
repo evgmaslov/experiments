@@ -21,9 +21,9 @@ import json
 
 @dataclass
 class TrainerConfig(HfTrainerConfig):
-   loss_fn: str
-   tracker_type: str
-   tracker_config: TrackerConfig
+   tracker_config: TrackerConfig = None
+   loss_fn: str = ""
+   tracker_type: str = ""
 
    def to_dict(self):
         d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}

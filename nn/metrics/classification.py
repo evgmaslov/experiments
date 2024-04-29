@@ -1,4 +1,4 @@
-from . import Score
+from .base import Score
 from transformers.trainer_utils import EvalPrediction
 import evaluate
 import numpy as np

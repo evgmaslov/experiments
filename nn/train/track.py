@@ -1,6 +1,6 @@
 from ..metrics import STRING_TO_SCORE
 from ..model import Model
-from ..data import DatasetBase, STRING_TO_PRINTER
+from ..data import STRING_TO_PRINTER
 
 from transformers.trainer_callback import TrainerCallback
 from dataclasses import dataclass, fields
@@ -98,9 +98,9 @@ class PrintOutputsCallback(TrainerCallback):
 
 @dataclass
 class TrackerConfig:
-    metrics: List[str] = []
+    metrics: List[str]
     print_outputs: bool = True
-    printer_type: str
+    printer_type: str = ""
     print_outputs_freq: int = 1
     num_outputs: int = 1
 
