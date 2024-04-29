@@ -1,0 +1,11 @@
+{
+    "num_train_epochs":2,
+    "tracker_type": "Tracker",
+    "tracker_config": {
+        "metrics": [],
+        "print_outputs": true,
+        "printer_type": "VolumePrinter",
+        "print_outputs_freq": 1,
+        "num_outputs": 1
+    }
+}

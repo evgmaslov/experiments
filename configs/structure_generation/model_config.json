@@ -1,0 +1,9 @@
+{
+    "name":"Diffusion 3D model from Diffusers",
+    "type":"DiffusersDDPM3D",
+    "path":"evgmaslov/diffusion-3d-material",
+    "sample_channels": 1,
+    "sample_shape": [32, 32, 32],
+    "layers_per_block": 2,
+    "channels": [320, 640, 1280, 1280]
+}
