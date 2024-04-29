@@ -4,14 +4,15 @@ import os
 import torch
 from datasets import Features, Array5D, Dataset
 import numpy as np
+from tqdm.notebook import tqdm
 
 class TesrConverter(Converter):
     def __call__(self, path: str, names: List[str] = None, dims: int = 3) -> Dataset:
         names = names if names != None else os.listdir(path)
         data = []
-        for name in names:
-            path = f"{path}/{name}"
-            tess = self.read_tesr(path)[np.newaxis,:,:,:]
+        for name in tqdm(names, desc="Converting data"):
+            full_path = f"{path}/{name}"
+            tess = self.read_tesr(full_path)[np.newaxis,:,:,:]
             if dims == 2:
                 tess = tess[:,0,:,:].squeeze(1)
             data.append(tess.tolist())

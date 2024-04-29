@@ -92,7 +92,7 @@ class MLMethod(Method):
             self.trainer.push_to_hub()
 
     def prepare_data(self):
-        converter = self.data_converter()
+        converter = self.converter_type()
         self.dataset = converter(**self.config.task_config.data)
         self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
     def load_data(self):
