@@ -1,6 +1,14 @@
 from datasets import Dataset
 from typing import Dict, List
-from . import CollatorConfig
+from dataclasses import dataclass, fields
+
+@dataclass
+class CollatorConfig:
+    type: str
+
+    def to_dict(self):
+        d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
+        return d
 
 class Converter():
     def __call__(self, *args, **kwargs) -> Dataset:

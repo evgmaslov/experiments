@@ -4,15 +4,7 @@ from typing import Any, Dict
 from .printers import VolumePrinter
 from .converters import TesrConverter
 from .collators import TesrCollator
-from .base import Converter, Printer
-
-@dataclass
-class CollatorConfig:
-    type: str
-
-    def to_dict(self):
-        d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
-        return d
+from .base import Converter, Printer, CollatorConfig
 
 @dataclass
 class DataConfig:

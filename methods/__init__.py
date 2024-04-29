@@ -85,9 +85,9 @@ class MLMethod(Method):
         super().save_step(path, step_name)
         if step_name == "prepare_data":
             if save_to == "hub":
-                self.dataset.push_to_hub(self.config.data_path)
+                self.dataset.push_to_hub(self.config.data_config.path)
             elif save_to == "dir":
-                self.dataset.save_to_disk(self.config.data_path)
+                self.dataset.save_to_disk(self.config.data_config.path)
         elif step_name == "train":
             if self.config.train_config.hub_model_id == None:
                 self.trainer.args.hub_model_id = self.config.model_config.path

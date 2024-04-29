@@ -14,8 +14,7 @@ class TesrConverter(Converter):
             full_path = f"{path}/{name}"
             with open(full_path, "r") as f:
                 lines = f.readlines()
-            data.append(lines.tolist())
-        data = np.concatenate(data, axis=0)
-        ds = Dataset.from_dict({"volume": data}).with_format("torch")
+            data.append("\n".join(lines))
+        ds = Dataset.from_dict({"volume": data})
         return ds
 

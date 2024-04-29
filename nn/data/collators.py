@@ -1,6 +1,5 @@
 from typing import List
-from nn.data import CollatorConfig
-from .base import Collator
+from .base import Collator, CollatorConfig
 import numpy as np
 import torch
 
@@ -12,7 +11,8 @@ class TesrCollator(Collator):
             "volume":[]
         }
         for element in batch:
-            tess = self.read_tesr(element["volume"])[np.newaxis,:,:,:]
+            lines = element["volume"].split("\n")
+            tess = self.read_tesr(lines)[np.newaxis,:,:,:]
             new_batch["volume"].append(tess.tolist())
         new_batch["volume"] = torch.from_numpy(np.concatenate(new_batch["volume"], axis=0))
         return new_batch
