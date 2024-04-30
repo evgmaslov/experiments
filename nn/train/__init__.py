@@ -26,8 +26,10 @@ class TrainerConfig(HfTrainerConfig):
    tracker_type: str = ""
 
    def to_dict(self):
-        d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
+        d = super().to_dict()
         d["tracker_config"] = self.tracker_config.to_dict()
+        d["tracker_config"] = self.tracker_type
+        d["loss_fn"] = self.loss_fn
         return d
 
 @dataclass

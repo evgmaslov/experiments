@@ -22,8 +22,8 @@ class DiffusersDDPM3D(Model):
                                  layers_per_block = self.layers_per_block, cross_attention_dim=self.cross_attention_dim, block_out_channels=self.channels)
     self.noise_scheduler = DDPMScheduler()
     self.loss = nn.MSELoss()
-  def forward(self, x: Dict) -> ModelOutput:
-    x0 = x["volume"]
+  def forward(self, volume, return_loss=True) -> ModelOutput:
+    x0 = volume
     batch_size = x0.shape[0]
     t = torch.randint(0, self.noise_scheduler.config.num_train_timesteps, (batch_size,), device=x0.device, dtype=torch.long)
     noise = torch.randn_like(x0).to(x0.device)

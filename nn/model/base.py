@@ -6,12 +6,15 @@ from torch import nn
 
 @dataclass
 class ModelConfig(PretrainedConfig):
-    name: str
-    type: str
-    path: str
+    name: str = ""
+    type: str = ""
+    path: str = ""
 
     def to_dict(self):
-        d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
+        d = super().to_dict()
+        d["name"] = self.name
+        d["type"] = self.type
+        d["path"] = self.path
         return d
 
 class Model(PreTrainedModel):

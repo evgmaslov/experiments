@@ -5,5 +5,5 @@
     "sample_channels": 1,
     "sample_shape": [32, 32, 32],
     "layers_per_block": 2,
-    "channels": [320, 640, 1280, 1280]
+    "channels": [64, 128, 128, 256]
 }

@@ -34,6 +34,10 @@ class DescriptionCallback(TrainerCallback):
             n_steps = int(state.max_steps/state.num_train_epochs)
             self.training_bar = tqdm(total=n_steps, desc="Training")
         self.current_step = 0
+        for key in self.history.keys():
+          self.history[key]["loss"].append([])
+          for score in self.tracker.metrics:
+            self.history[key][score.name].append([])
 
     def on_step_end(self, args, state, control, **kwargs):
         if not state.is_world_process_zero:
@@ -45,12 +49,13 @@ class DescriptionCallback(TrainerCallback):
             batch = self.tracker.last_train_batch
             loss = round(batch["loss"].item(), 5)
             description = f"Loss: {loss}"
+            self.history["train"]["loss"][-1].append(loss)
             for score in self.tracker.metrics:
                 labels = [batch["inputs"][key].detach().cpu().numpy() for key in score.label_names]
                 preds = [batch["outputs"][key].detach().cpu().numpy() for key in score.output_names]
                 value = score(EvalPrediction(preds, labels, None))
                 description = description + f"; {score.name}: {value}"
-                self.history["train"][score.name].append(value)
+                self.history["train"][score.name][-1].append(value)
             self.training_bar.set_description(description)
 
     def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
@@ -61,16 +66,17 @@ class DescriptionCallback(TrainerCallback):
                 total=len(eval_dataloader), desc="Validation"
             )
         self.validation_bar.update(1)
-        if self.tracker.last_train_batch != None:
+        if self.tracker.last_val_batch != None:
             batch = self.tracker.last_val_batch
             loss = round(batch["loss"].item(), 5)
             description = f"Loss: {loss}"
+            self.history["val"]["loss"][-1].append(loss)
             for score in self.tracker.metrics:
                 labels = [batch["inputs"][key].detach().cpu().numpy() for key in score.label_names]
                 preds = [batch["outputs"][key].detach().cpu().numpy() for key in score.output_names]
                 value = score(EvalPrediction(preds, labels, None))
                 description = description + f"; {score.name}: {value}"
-                self.history["val"][score.name].append(value)
+                self.history["val"][score.name][-1].append(value)
             self.validation_bar.set_description(description)
 
     def on_evaluate(self, args, state, control, **kwargs):
@@ -84,9 +90,8 @@ class DescriptionCallback(TrainerCallback):
             self.training_bar.close()
             self.training_bar = None
             self.epoch_counter += 1
-            train_report = ', '.join([f"{k}: {sum(v)/len(v)}" for k, v in self.history["train"].items()])
-            val_report = ', '.join([f"{k}: {sum(v)/len(v)}" for k, v in self.history["val"].items()])
-            print(f"Epoch {self.epoch_counter}. Train: {train_report}. Val: {val_report}")
+            train_report = ', '.join([f"{k}: {sum(v[-1])/len(v[-1])}" for k, v in self.history["train"].items()])
+            print(f"Epoch {self.epoch_counter}. Train: {train_report}.")
 
 class PrintOutputsCallback(TrainerCallback):
     def __init__(self, tracker):
@@ -94,11 +99,10 @@ class PrintOutputsCallback(TrainerCallback):
     def on_evaluate(self, args, state, control, eval_dataloader, **kwargs):
         if not state.is_world_process_zero or not hasattr(state, "trainer") or self.tracker.printer == None:
             return
-        indexes = random.sample(range(len(eval_dataloader.dataset)), self.n_outputs)
-        data_samples = eval_dataloader.dataset[indexes]
-        self.tracker.printer(data_samples)
+        indexes = random.sample(range(len(eval_dataloader.dataset)), self.tracker.config.num_outputs)
         inputs = [eval_dataloader.dataset[i] for i in indexes]
         processed = eval_dataloader.collate_fn(inputs)
+        self.tracker.printer(processed)
         state.trainer.model.inference(processed, True)
         
     def device_dict(self, dictionary):

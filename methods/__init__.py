@@ -5,6 +5,7 @@ from nn.data import Converter, DataConfig, STRING_TO_CONVERTER, STRING_TO_COLLAT
 from nn.model import STRING_TO_MODEL
 from nn.model.base import ModelConfig
 from nn.train import TrainerConfig, Trainer
+import datasets
 from datasets import load_dataset
 from transformers import default_data_collator
 
@@ -98,9 +99,9 @@ class MLMethod(Method):
         self.dataset = load_dataset(self.config.data_config.path).with_format("torch")
         if not isinstance(self.dataset, datasets.dataset_dict.DatasetDict):
             self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
-        new_count = int(len(self.dataset["train"])*self.config.data_config.use_size)
         for split in self.dataset.keys():
-            self.dataset[split] = self.dataset[split][:new_count]
+            new_count = int(len(self.dataset[split])*self.config.data_config.use_size)
+            self.dataset[split] = self.dataset[split].select(range(new_count))
     def save_data(self, path: str, save_to: str = "hub"):
         if save_to == "hub":
             self.dataset.push_to_hub(path)

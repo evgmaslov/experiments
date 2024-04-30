@@ -12,9 +12,9 @@ class TesrCollator(Collator):
         }
         for element in batch:
             lines = element["volume"].split("\n")
-            tess = self.read_tesr(lines)[np.newaxis,:,:,:]
+            tess = self.read_tesr(lines)[np.newaxis, np.newaxis,:,:,:]
             new_batch["volume"].append(tess.tolist())
-        new_batch["volume"] = torch.from_numpy(np.concatenate(new_batch["volume"], axis=0))
+        new_batch["volume"] = torch.from_numpy(np.concatenate(new_batch["volume"], axis=0)).type("torch.FloatTensor")
         return new_batch
     def read_tesr(self, lines):
       voxels = []
