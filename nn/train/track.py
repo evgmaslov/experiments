@@ -103,6 +103,11 @@ class PrintOutputsCallback(TrainerCallback):
         inputs = [eval_dataloader.dataset[i] for i in indexes]
         processed = eval_dataloader.collate_fn(inputs)
         self.tracker.printer(processed)
+        device = "cuda"
+        if state.trainer.args.use_cpu:
+          device = "cpu"
+        for key in processed.keys():
+          processed[key] = processed[key].to(device)
         state.trainer.model.inference(processed, True)
         
     def device_dict(self, dictionary):
