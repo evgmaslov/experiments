@@ -17,6 +17,17 @@ class DescriptionCallback(TrainerCallback):
         self.validation_bar = None
         self.current_step = 0
         self.epoch_counter = 0
+        self.history = {
+            "train":{
+                "loss":[]
+            },
+            "val":{
+                "loss":[]
+            }
+        }
+        for score in self.tracker.metrics:
+            for key in self.history.keys():
+                self.history[key][score.name] = []
 
     def on_epoch_begin(self, args, state, control, **kwargs):
         if state.is_world_process_zero:
@@ -39,6 +50,7 @@ class DescriptionCallback(TrainerCallback):
                 preds = [batch["outputs"][key].detach().cpu().numpy() for key in score.output_names]
                 value = score(EvalPrediction(preds, labels, None))
                 description = description + f"; {score.name}: {value}"
+                self.history["train"][score.name].append(value)
             self.training_bar.set_description(description)
 
     def on_prediction_step(self, args, state, control, eval_dataloader=None, **kwargs):
@@ -58,6 +70,7 @@ class DescriptionCallback(TrainerCallback):
                 preds = [batch["outputs"][key].detach().cpu().numpy() for key in score.output_names]
                 value = score(EvalPrediction(preds, labels, None))
                 description = description + f"; {score.name}: {value}"
+                self.history["val"][score.name].append(value)
             self.validation_bar.set_description(description)
 
     def on_evaluate(self, args, state, control, **kwargs):
@@ -71,9 +84,9 @@ class DescriptionCallback(TrainerCallback):
             self.training_bar.close()
             self.training_bar = None
             self.epoch_counter += 1
-            train_report = ', '.join([f"{k}: {sum(v)}" for k, v in self.history["train"].items()])
-            val_report = ', '.join([f"{k}: {sum(v)}" for k, v in self.history["val"].items()])
-            print(f"Epoch {self.epoch_counter}. Train: {train_report}")
+            train_report = ', '.join([f"{k}: {sum(v)/len(v)}" for k, v in self.history["train"].items()])
+            val_report = ', '.join([f"{k}: {sum(v)/len(v)}" for k, v in self.history["val"].items()])
+            print(f"Epoch {self.epoch_counter}. Train: {train_report}. Val: {val_report}")
 
 class PrintOutputsCallback(TrainerCallback):
     def __init__(self, tracker):
@@ -86,7 +99,7 @@ class PrintOutputsCallback(TrainerCallback):
         self.tracker.printer(data_samples)
         inputs = [eval_dataloader.dataset[i] for i in indexes]
         processed = eval_dataloader.collate_fn(inputs)
-        state.trainer.model.inference(processed, print=True)
+        state.trainer.model.inference(processed, True)
         
     def device_dict(self, dictionary):
         for k in dictionary.keys():

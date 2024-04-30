@@ -84,10 +84,7 @@ class MLMethod(Method):
     def save_step(self, path: str, step_name: str, save_to: str = "hub"):
         super().save_step(path, step_name)
         if step_name == "prepare_data":
-            if save_to == "hub":
-                self.dataset.push_to_hub(self.config.data_config.path)
-            elif save_to == "dir":
-                self.dataset.save_to_disk(self.config.data_config.path)
+            self.save_data(path, save_to)
         elif step_name == "train":
             if self.config.train_config.hub_model_id == None:
                 self.trainer.args.hub_model_id = self.config.model_config.path
@@ -104,6 +101,11 @@ class MLMethod(Method):
         new_count = int(len(self.dataset["train"])*self.config.data_config.use_size)
         for split in self.dataset.keys():
             self.dataset[split] = self.dataset[split][:new_count]
+    def save_data(self, path: str, save_to: str = "hub"):
+        if save_to == "hub":
+            self.dataset.push_to_hub(path)
+        elif save_to == "dir":
+            self.dataset.save_to_disk(path)
     
     def train(self):
         if self.model == None:
