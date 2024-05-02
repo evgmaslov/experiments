@@ -1,0 +1,8 @@
+{
+    "name":"Polycrystal structure generation",
+    "input_type":"GenerationTaskIntput",
+    "output_type":"GenerationTaskOutput",
+    "data":{
+        "path":"dataset"
+    }
+}

@@ -1,6 +1,6 @@
 from transformers.utils import ModelOutput
 from nn.model.base import ModelConfig, Model
-from nn.model.configs import DiffusionConfig
+from nn.model.volume_generation import DiffusionConfig
 
 import torch
 from torch import nn 
@@ -17,7 +17,7 @@ class DiffusersDDPM3D(Model):
     self.sample_shape = config.sample_shape
     self.sample_channels = config.sample_channels
     self.layers_per_block = config.layers_per_block
-    self.channels = config.channels
+    self.channels = tuple([int(config.model_channels*m) for m in config.ch_mults])
     self.eps_model = UNet3DConditionModel(sample_size = self.sample_shape, in_channels = self.sample_channels, out_channels = self.sample_channels,
                                  layers_per_block = self.layers_per_block, cross_attention_dim=self.cross_attention_dim, block_out_channels=self.channels)
     self.noise_scheduler = DDPMScheduler()

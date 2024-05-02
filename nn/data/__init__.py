@@ -3,7 +3,7 @@ from dataclasses import dataclass, fields
 from typing import Any, Dict
 from .printers import VolumePrinter
 from .converters import TesrConverter
-from .collators import TesrCollator
+from .collators import TesrCollator, TesrCollatorWithCondition
 from .base import Converter, Printer, CollatorConfig
 
 @dataclass
@@ -27,6 +27,7 @@ STRING_TO_CONVERTER = {
 
 STRING_TO_COLLATOR = {
     "TesrCollator":TesrCollator,
+    "TesrCollatorWithCondition":TesrCollatorWithCondition,
 }
 
 STRING_TO_PRINTER = {

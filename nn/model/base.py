@@ -21,7 +21,7 @@ class Model(PreTrainedModel):
     def __init__(self, config: ModelConfig):
         nn.Module.__init__(self)
         self.config = config
-    def forward(self, x: Dict) -> ModelOutput:
+    def forward(self, **kwargs) -> ModelOutput:
         pass
     def inference(self, x: Dict, print_output: bool = False) -> Dict:
         pass

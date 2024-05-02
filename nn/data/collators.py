@@ -1,7 +1,9 @@
-from typing import List
+from typing import List, Tuple
 from .base import Collator, CollatorConfig
 import numpy as np
 import torch
+from dataclasses import dataclass
+import random
 
 class TesrCollator(Collator):
     def __init__(self, config: CollatorConfig):
@@ -56,3 +58,36 @@ class TesrCollator(Collator):
             tess[k, j, i] = voxels[counter]/n_cells
             counter += 1
       return tess
+
+@dataclass
+class TesrCollatorWithConditionConfig(CollatorConfig):
+    condition_views: list = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
+    condition_sampling_weights: list = [1, 1, 1]
+
+class TesrCollatorWithCondition(TesrCollator):
+    def __init__(self, config: CollatorConfig):
+        super().__init__(config)
+    def __call__(self, batch: List):
+        batch = super().__call__(batch)
+        conditions = random.choices(self.config.condition_views, weights=self.config.condition_sampling_weights, k=batch["volume"].shape[0])
+        masks = None
+        for c in conditions:
+            mask = self.get_mask(c, batch["volume"].shape[2:])[None, None, :, :, :]
+            if masks == None:
+                masks = mask
+            else:
+                masks = torch.cat([masks, mask], dim=0)
+        batch["mask"] = masks
+        return batch
+    def get_mask(self, condition: Tuple, shape) -> Tuple:
+        indexes = []
+        for ind, i in enumerate(condition):
+            if i == 0:
+                indexes.extend([0, shape[ind]])
+            elif i == 1:
+                indexes.extend([0, 1])
+            elif i == 2:
+                indexes.extend([-1, shape[ind]])
+        mask = torch.zeros(shape)
+        mask[indexes[0]: indexes[1], indexes[2]: indexes[3], indexes[4]: indexes[5]] = 1
+        return mask
