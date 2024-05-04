@@ -15,7 +15,7 @@
     "use_scale_shift_norm": false,
     "resblock_updown": false,
     "split_qkv_before_heads": false,
-    "scheduler":"DDPMScheduler",
+    "scheduler_config":"DDPMScheduler",
     "loss":"MSELoss",
     "gama":0.5,
     "u":10

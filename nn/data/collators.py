@@ -61,8 +61,8 @@ class TesrCollator(Collator):
 
 @dataclass
 class TesrCollatorWithConditionConfig(CollatorConfig):
-    condition_views: list = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
-    condition_sampling_weights: list = [1, 1, 1]
+    condition_views: list
+    condition_sampling_weights: list
 
 class TesrCollatorWithCondition(TesrCollator):
     def __init__(self, config: CollatorConfig):

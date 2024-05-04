@@ -1,5 +1,4 @@
-from nn.model.base import ModelConfig
-from .. import Model
+from nn.model.base import ModelConfig, Model
 from ..blocks.diffusion import AttentionBlock, ResBlockWithTimestep, TimestepEmbedSequential, timestep_embedding
 from ..blocks.vision import conv_nd, Downsample, Upsample
 from ..utils.initialization import zero

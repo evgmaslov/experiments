@@ -1,6 +1,5 @@
 from ..base import ModelConfig
-from ....methods.diffusion.schedulers import SchedulerConfig
-from typing import Tuple
+from typing import Tuple, Any
 from dataclasses import dataclass
 
 @dataclass
@@ -19,7 +18,7 @@ class DiffusionConfig(ModelConfig):
   resblock_updown: bool = False
   split_qkv_before_heads: bool = False
 
-  scheduler_config: SchedulerConfig
+  scheduler_config: Any = 0
   loss: str = "MSELoss"
 
   def to_dict(self):
@@ -43,7 +42,7 @@ class DiffusionConfig(ModelConfig):
 
 @dataclass
 class SeisFusionConfig(DiffusionConfig):
-  gama: float
+  gama: float = 0.5
   u: int = 10
 
   def to_dict(self):
