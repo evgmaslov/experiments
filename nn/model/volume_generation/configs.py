@@ -20,7 +20,7 @@ class DiffusionConfig(ModelConfig):
   split_qkv_before_heads: bool = False
 
   scheduler_config: SchedulerConfig
-  loss: str
+  loss: str = "MSELoss"
 
   def to_dict(self):
     d = super().to_dict()
@@ -37,12 +37,16 @@ class DiffusionConfig(ModelConfig):
     d["use_scale_shift_norm"] = self.use_scale_shift_norm
     d["resblock_updown"] = self.resblock_updown
     d["split_qkv_before_heads"] = self.split_qkv_before_heads
+    d["scheduler_config"] = self.scheduler_config.to_dict()
+    d["loss"] = self.loss
     return d
 
 @dataclass
 class SeisFusionConfig(DiffusionConfig):
   gama: float
-  learn_sigma: bool = False
+  u: int = 10
 
   def to_dict(self):
-    return super().to_dict()
+    d = super().to_dict()
+    d["gama"] = self.gama
+    return d

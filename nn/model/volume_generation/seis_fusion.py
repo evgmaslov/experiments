@@ -255,7 +255,7 @@ class UNetModel(nn.Module):
         h = h
         return self.out(h)
 
-class condition_U(nn.Module):
+class ConditionUNet(nn.Module):
     def __init__(self,
                  gama,
                  data_size,
@@ -320,7 +320,7 @@ class condition_U(nn.Module):
 class SeisFusion(Model):
     def __init__(self, config: SeisFusionConfig):
         super().__init__(config)
-        self.eps_model = condition_U(
+        self.eps_model = ConditionUNet(
             gama=config.gama,
             in_channels=config.sample_channels,
             model_channels=config.model_channels,
@@ -335,24 +335,24 @@ class SeisFusion(Model):
             resblock_updown=config.resblock_updown,
             use_new_attention_order=config.split_qkv_before_heads,
         )
-        self.learn_sigma = config.learn_sigma
+        
         scheduler_type = STRING_TO_SCHEDULER.get(config.scheduler_config.type, None)
         assert scheduler_type != None, f"Scheduler can't be {config.scheduler_config.type}, define right scheduler type in scheduler config"
-        self.scheduler = scheduler_type(config.scheduler_config)
+        self.scheduler = scheduler_type.from_config(config.scheduler_config)
         loss_type = STRING_TO_LOSS.get(config.loss, None)
         assert loss_type != None, f"Loss can't be {config.loss}, define right loss in the config"
         self.loss = loss_type()
 
     def forward(self, volume, mask, return_loss=True) -> ModelOutput:
         condition = torch.mul(volume, mask)
-        t, weights = self.scheduler.sample_timesteps(volume.shape[0])
-        t, weights = t.to(volume.device), weights.to(volume.device)
-        noise = torch.randn_like(volume).to(volume.device)
+        x0 = volume
+        batch_size = x0.shape[0]
+        t = torch.randint(0, self.scheduler.config.num_train_timesteps, (batch_size,), device=x0.device, dtype=torch.long)
+        noise = torch.randn_like(x0).to(x0.device)
         x_t = self.scheduler.add_noise(volume, noise, t)
-        model_output = self.eps_model(volume, t, condition)
+        gt_t = self.scheduler.add_noise(condition, noise, t)
+        model_output = self.eps_model(x_t, t, gt_t)
         
-        if self.learn_sigma:
-            model_output, model_var_values = torch.split(model_output, volume.shape[1], dim=1)
         loss = self.loss(model_output, noise)
         output = ModelOutput()
         output["loss"] = loss
@@ -360,19 +360,30 @@ class SeisFusion(Model):
 
     def inference(self, x: Dict, print_output: bool = False) -> Dict:
         with torch.no_grad():
-            mask = x["mask"]
-            condition = torch.mul(x["volume"], mask)
             x = torch.randn_like(x["volume"])
-            for t in tqdm(list(range(self.scheduler.num_timesteps))[::-1]):
+            mask = x["mask"]
+            condition = x*mask
+            for t in tqdm(self.scheduler.timesteps):
                 time = x.new_full((x.shape[0],), t, dtype=torch.long)
-                xt = self.eps_model(x, time, condition)[0]
-                x = self.scheduler.step(xt, t, x)
+                x = self.guided_sampling_step(x, time, condition, mask)
             output = {
                 "volume":x
             }
         if print_output:
             self.show_outputs(x)
         return output
+    def guided_sampling_step(self, x_t, t, condition, mask):
+        beta = self.scheduler.betas[t[0].item()]
+        for i in self.config.u:
+            noise = torch.randn_like(x_t)
+            gt_t = self.scheduler.add_noise(condition, noise, t)*mask
+            eps = self.eps_model(x_t, t, gt_t)
+            x_t1 = self.scheduler.step(eps, t, x_t).prev_sample
+            x_t = gt_t + (1-mask)*x_t1
+            if i != self.config.u - 1:
+                x_t = (1-beta)**0.5*x_t1 + beta*noise
+        return x_t
+            
     def show_outputs(self, x):
         x = x[:,0,:,:,:].squeeze(1)
         x = abs(x + abs(x.min()))
