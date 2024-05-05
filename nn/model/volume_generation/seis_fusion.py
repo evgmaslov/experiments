@@ -344,7 +344,10 @@ class SeisFusion(Model):
         t = torch.randint(0, self.scheduler.config.num_train_timesteps, (batch_size,), device=x0.device, dtype=torch.long)
         noise = torch.randn_like(x0).to(x0.device)
         x_t = self.scheduler.add_noise(volume, noise, t)
+
+        last_step_times = t == 0
         gt_t = self.scheduler.add_noise(condition, noise, t-1)
+        gt_t[last_step_times] = condition[last_step_times]
         model_output = self.eps_model(x_t, t, gt_t)
         
         loss = self.loss(model_output, noise)
@@ -355,8 +358,8 @@ class SeisFusion(Model):
     def inference(self, x: Dict, print_output: bool = False) -> Dict:
         with torch.no_grad():
             mask = x["mask"]
+            condition = x["volume"]*mask
             x = torch.randn_like(x["volume"])
-            condition = x*mask
             for t in tqdm(self.scheduler.timesteps):
                 time = x.new_full((x.shape[0],), t, dtype=torch.long)
                 x = self.guided_sampling_step(x, time, condition, mask)
@@ -367,10 +370,11 @@ class SeisFusion(Model):
             self.show_outputs(x)
         return output
     def guided_sampling_step(self, x_t, t, condition, mask):
-        beta = self.scheduler.betas[t[0].item()]
+        time = t[0].item()
+        beta = self.scheduler.betas[time-1]
         for i in range(self.config.u):
             noise = torch.randn_like(x_t)
-            gt_t1 = self.scheduler.add_noise(condition, noise, t-1)*mask
+            gt_t1 = self.scheduler.add_noise(condition, noise, t-1)*mask if time > 0 else condition
             eps = self.eps_model(x_t, t, gt_t1)
             x_t1 = self.scheduler.step(eps, t, x_t).prev_sample
             x_t = gt_t1 + (1-mask)*x_t1
