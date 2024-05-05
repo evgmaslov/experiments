@@ -329,7 +329,7 @@ class SeisFusion(Model):
             resblock_updown=config.resblock_updown,
             use_new_attention_order=config.split_qkv_before_heads,
         )
-        
+        self.sample_shape = config.sample_shape
         scheduler_type = STRING_TO_SCHEDULER.get(config.scheduler_config.type, None)
         assert scheduler_type != None, f"Scheduler can't be {config.scheduler_config.type}, define right scheduler type in scheduler config"
         self.scheduler = scheduler_type(config.scheduler_config)
@@ -344,7 +344,7 @@ class SeisFusion(Model):
         t = torch.randint(0, self.scheduler.config.num_train_timesteps, (batch_size,), device=x0.device, dtype=torch.long)
         noise = torch.randn_like(x0).to(x0.device)
         x_t = self.scheduler.add_noise(volume, noise, t)
-        gt_t = self.scheduler.add_noise(condition, noise, t)
+        gt_t = self.scheduler.add_noise(condition, noise, t-1)
         model_output = self.eps_model(x_t, t, gt_t)
         
         loss = self.loss(model_output, noise)
@@ -354,8 +354,8 @@ class SeisFusion(Model):
 
     def inference(self, x: Dict, print_output: bool = False) -> Dict:
         with torch.no_grad():
-            x = torch.randn_like(x["volume"])
             mask = x["mask"]
+            x = torch.randn_like(x["volume"])
             condition = x*mask
             for t in tqdm(self.scheduler.timesteps):
                 time = x.new_full((x.shape[0],), t, dtype=torch.long)
@@ -368,12 +368,12 @@ class SeisFusion(Model):
         return output
     def guided_sampling_step(self, x_t, t, condition, mask):
         beta = self.scheduler.betas[t[0].item()]
-        for i in self.config.u:
+        for i in range(self.config.u):
             noise = torch.randn_like(x_t)
-            gt_t = self.scheduler.add_noise(condition, noise, t)*mask
-            eps = self.eps_model(x_t, t, gt_t)
+            gt_t1 = self.scheduler.add_noise(condition, noise, t-1)*mask
+            eps = self.eps_model(x_t, t, gt_t1)
             x_t1 = self.scheduler.step(eps, t, x_t).prev_sample
-            x_t = gt_t + (1-mask)*x_t1
+            x_t = gt_t1 + (1-mask)*x_t1
             if i != self.config.u - 1:
                 x_t = (1-beta)**0.5*x_t1 + beta*noise
         return x_t

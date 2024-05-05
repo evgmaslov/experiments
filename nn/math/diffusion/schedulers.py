@@ -7,6 +7,7 @@ import inspect
 @dataclass
 class SchedulerConfig:
     type: str
+    num_train_timesteps: int = 1000
 
     def to_dict(self):
         d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}
@@ -24,6 +25,8 @@ class DiffusersScheduler():
                 final_params[arg] = config_params[arg]
         self.scheduler = diffusers_type(**final_params)
         self.config = self.scheduler.config
+        self.timesteps = self.scheduler.timesteps
+        self.betas = self.scheduler.betas
     def step(self, *args, **kwargs):
         return self.scheduler.step(*args, **kwargs)
     def add_noise(self, *args, **kwargs):

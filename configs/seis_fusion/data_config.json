@@ -4,7 +4,7 @@
     "converter_type":"TesrConverter",
     "collator_config":{
         "type":"TesrCollatorWithCondition",
-        "condition_views": [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        "condition_views": [[2, 0, 0], [0, 1, 0], [0, 0, 2]],
         "condition_sampling_weights": [1, 1, 1]
     },
     "split":0.1,

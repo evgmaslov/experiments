@@ -16,7 +16,8 @@
     "resblock_updown": false,
     "split_qkv_before_heads": false,
     "scheduler_config":{
-        "type":"DDPMScheduler"
+        "type":"DDPMScheduler",
+        "num_train_timesteps":250
     },
     "loss":"MSELoss",
     "gama":0.5,

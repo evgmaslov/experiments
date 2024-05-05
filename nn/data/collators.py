@@ -89,5 +89,5 @@ class TesrCollatorWithCondition(TesrCollator):
             elif i == 2:
                 indexes.extend([-1, shape[ind]])
         mask = torch.zeros(shape)
-        mask[:, :, indexes[0]: indexes[1], indexes[2]: indexes[3], indexes[4]: indexes[5]] = 1
+        mask[indexes[0]: indexes[1], indexes[2]: indexes[3], indexes[4]: indexes[5]] = 1
         return mask

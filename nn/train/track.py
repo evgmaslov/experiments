@@ -95,8 +95,9 @@ class DescriptionCallback(TrainerCallback):
 class PrintOutputsCallback(TrainerCallback):
     def __init__(self, tracker):
         self.tracker = tracker
+        self.epoch_counter = 0
     def on_evaluate(self, args, state, control, eval_dataloader, **kwargs):
-        if not state.is_world_process_zero or not hasattr(state, "trainer") or self.tracker.printer == None:
+        if not state.is_world_process_zero or not hasattr(state, "trainer") or self.tracker.printer == None or self.tracker.config.print_outputs_freq % self.epoch_counter != 0:
             return
         indexes = random.sample(range(len(eval_dataloader.dataset)), self.tracker.config.num_outputs)
         inputs = [eval_dataloader.dataset[i] for i in indexes]
@@ -116,6 +117,10 @@ class PrintOutputsCallback(TrainerCallback):
             else:
                 dictionary[k] = dictionary[k].to(self.device)
         return dictionary
+    
+    def on_epoch_end(self, args, state, control, **kwargs):
+        if state.is_world_process_zero:
+            self.epoch_counter += 1
 
 @dataclass
 class TrackerConfig:
