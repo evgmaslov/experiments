@@ -3,7 +3,7 @@ from ..blocks.diffusion import AttentionBlock, ResBlockWithTimestep, TimestepEmb
 from ..blocks.vision import conv_nd, Downsample, Upsample
 from ..utils.initialization import zero
 from .configs import SeisFusionConfig
-from ....methods.diffusion import STRING_TO_SCHEDULER
+from ...math.diffusion import STRING_TO_SCHEDULER
 from ...train.loss import STRING_TO_LOSS
 
 from typing import Dict
