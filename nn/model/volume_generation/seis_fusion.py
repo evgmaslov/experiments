@@ -48,7 +48,6 @@ class UNetModel(nn.Module):
 
     def __init__(
         self,
-        data_size,
         in_channels,
         model_channels,
         out_channels,
@@ -68,7 +67,6 @@ class UNetModel(nn.Module):
 
         num_heads_upsample = num_heads
 
-        self.data_size = data_size
         self.in_channels = in_channels
         self.model_channels = model_channels
         self.out_channels = out_channels
@@ -257,7 +255,6 @@ class UNetModel(nn.Module):
 class ConditionUNet(nn.Module):
     def __init__(self,
                  gama,
-                 data_size,
                  in_channels,
                  model_channels,
                  out_channels,
@@ -275,7 +272,6 @@ class ConditionUNet(nn.Module):
                  ):
         super().__init__()
         self.model1 = UNetModel(
-            data_size,
             in_channels,
             model_channels,
             out_channels,
@@ -292,7 +288,6 @@ class ConditionUNet(nn.Module):
             use_new_attention_order,
         )
         self.model2 = UNetModel(
-            data_size,
             in_channels,
             model_channels,
             out_channels,
@@ -323,7 +318,7 @@ class SeisFusion(Model):
             gama=config.gama,
             in_channels=config.sample_channels,
             model_channels=config.model_channels,
-            out_channels=(1 if not config.learn_sigma else 2),
+            out_channels=config.sample_channels,
             num_res_blocks=config.layers_per_block,
             attention_resolutions=config.attn_res,
             dropout=config.dropout,
@@ -337,7 +332,7 @@ class SeisFusion(Model):
         
         scheduler_type = STRING_TO_SCHEDULER.get(config.scheduler_config.type, None)
         assert scheduler_type != None, f"Scheduler can't be {config.scheduler_config.type}, define right scheduler type in scheduler config"
-        self.scheduler = scheduler_type.from_config(config.scheduler_config)
+        self.scheduler = scheduler_type(config.scheduler_config)
         loss_type = STRING_TO_LOSS.get(config.loss, None)
         assert loss_type != None, f"Loss can't be {config.loss}, define right loss in the config"
         self.loss = loss_type()

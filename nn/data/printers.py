@@ -5,8 +5,11 @@ import numpy as np
 
 class VolumePrinter(Printer):
     def __call__(self, data: Dict):
-        fig = plt.figure()
         volumes = data["volume"]
+        self.print_volumes(volumes)
+        
+    def print_volumes(self, volumes):
+        fig = plt.figure()
         sample_shape = volumes.shape[2:]
         for i in range(volumes.shape[0]):
             vol = volumes[i].permute(1, 2, 3, 0)
@@ -17,3 +20,10 @@ class VolumePrinter(Printer):
             colors = np.concatenate([colors, np.ones((*sample_shape, 1))], axis=3)
             ax.voxels(sample.squeeze(3), facecolors=colors)
         plt.show()
+
+class VolumePrinterWithCondition(VolumePrinter):
+    def __call__(self, data: Dict):
+        volumes = data["volume"]
+        mask = data["mask"]
+        masked_volumes = volumes*mask
+        self.print_volumes(masked_volumes)

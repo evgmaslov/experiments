@@ -1,5 +1,4 @@
 from ..metrics import STRING_TO_SCORE
-from ..model import Model
 from ..data import STRING_TO_PRINTER
 
 from transformers.trainer_callback import TrainerCallback

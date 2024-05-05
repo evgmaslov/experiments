@@ -1,7 +1,7 @@
 from datasets import Dataset
 from dataclasses import dataclass, fields
 from typing import Any, Dict
-from .printers import VolumePrinter
+from .printers import VolumePrinter, VolumePrinterWithCondition
 from .converters import TesrConverter
 from .collators import TesrCollator, TesrCollatorWithCondition
 from .base import Converter, Printer, CollatorConfig
@@ -32,4 +32,5 @@ STRING_TO_COLLATOR = {
 
 STRING_TO_PRINTER = {
     "VolumePrinter":VolumePrinter,
+    "VolumePrinterWithCondition":VolumePrinterWithCondition,
 }

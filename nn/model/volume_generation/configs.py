@@ -1,4 +1,5 @@
 from ..base import ModelConfig
+from ...math.diffusion.schedulers import SchedulerConfig
 from typing import Tuple, Any
 from dataclasses import dataclass
 
@@ -18,7 +19,7 @@ class DiffusionConfig(ModelConfig):
   resblock_updown: bool = False
   split_qkv_before_heads: bool = False
 
-  scheduler_config: Any = 0
+  scheduler_config: SchedulerConfig = SchedulerConfig(type="DDPMScheduler")
   loss: str = "MSELoss"
 
   def to_dict(self):

@@ -1,5 +1,6 @@
 {
     "evaluation_strategy":"epoch",
+    "save_strategy":"epoch",
     "fp16":true,
     "remove_unused_columns":false,
     "output_dir":"/content",
@@ -10,7 +11,7 @@
     "tracker_config": {
         "metrics": [],
         "print_outputs": true,
-        "printer_type": "VolumePrinter",
+        "printer_type": "VolumePrinterWithCondition",
         "print_outputs_freq": 1,
         "num_outputs": 1
     }
