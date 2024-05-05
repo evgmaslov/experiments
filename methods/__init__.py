@@ -117,6 +117,8 @@ class MLMethod(Method):
         else:
             collator = None
         
+        resume_from_checkpoint = self.config.train_config.resume_from_checkpoint
+
         self.trainer = Trainer(
             model=self.model,
             args=self.config.train_config,
@@ -124,4 +126,4 @@ class MLMethod(Method):
             eval_dataset=self.dataset["test"],
             data_collator=collator
         )
-        self.trainer.train()
+        self.trainer.train(resume_from_checkpoint)

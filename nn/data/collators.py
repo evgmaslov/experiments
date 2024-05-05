@@ -80,14 +80,20 @@ class TesrCollatorWithCondition(TesrCollator):
         batch["mask"] = masks
         return batch
     def get_mask(self, condition: Tuple, shape) -> Tuple:
-        indexes = []
-        for ind, i in enumerate(condition):
-            if i == 0:
-                indexes.extend([0, shape[ind]])
-            elif i == 1:
-                indexes.extend([0, 1])
-            elif i == 2:
-                indexes.extend([-1, shape[ind]])
         mask = torch.zeros(shape)
-        mask[indexes[0]: indexes[1], indexes[2]: indexes[3], indexes[4]: indexes[5]] = 1
+        for ind, i in enumerate(condition):
+            if i == 1:
+                if ind == 0:
+                  mask[0,:,:] = 1
+                elif ind == 1:
+                  mask[:,0,:] = 1
+                elif ind == 2:
+                  mask[:,:,0] = 1
+            elif i == 2:
+                if ind == 0:
+                  mask[-1,:,:] = 1
+                elif ind == 1:
+                  mask[:,-1,:] = 1
+                elif ind == 2:
+                  mask[:,:,-1] = 1
         return mask

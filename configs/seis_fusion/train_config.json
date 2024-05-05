@@ -1,10 +1,11 @@
 {
+    "resume_from_checkpoint":false,
     "evaluation_strategy":"epoch",
     "save_strategy":"epoch",
     "fp16":true,
     "remove_unused_columns":false,
     "output_dir":"/content",
-    "num_train_epochs":2,
+    "num_train_epochs":10,
     "per_device_train_batch_size":2,
     "per_device_eval_batch_size":2,
     "tracker_type": "Tracker",
@@ -12,7 +13,7 @@
         "metrics": [],
         "print_outputs": true,
         "printer_type": "VolumePrinterWithCondition",
-        "print_outputs_freq": 1,
+        "print_outputs_freq": 5,
         "num_outputs": 1
     }
 }
