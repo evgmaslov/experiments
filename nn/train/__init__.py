@@ -1,1 +1,1 @@
-from backend.trainer import Trainer, TrainerConfig, TrainerState
+from .backend.trainer import Trainer, TrainerConfig, TrainerState

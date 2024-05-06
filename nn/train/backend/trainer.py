@@ -25,6 +25,7 @@ class TrainerConfig(HfTrainerConfig):
    tracker_config: TrackerConfig = None
    loss_fn: str = ""
    tracker_type: str = ""
+   use_checkpoint_hub: bool = True
    checkpoint_hub: str = ""
 
    def to_dict(self):
@@ -62,8 +63,9 @@ class Trainer(HfTrainer):
             for call in self.tracker.callbacks:
                 callbacks.append(call)
         
-        self.checkpoint_manager = CheckpointManager(args.output_dir, args.checkpoint_hub)
-        callbacks.append(SaveCheckpointCallback(self.checkpoint_manager))
+        if args.use_checkpoint_hub:
+            self.checkpoint_manager = CheckpointManager(args.output_dir, args.checkpoint_hub)
+            callbacks.append(SaveCheckpointCallback(self.checkpoint_manager))
         
         super().__init__(model, args, data_collator, train_dataset, eval_dataset, tokenizer, model_init, compute_metrics, callbacks, optimizers, preprocess_logits_for_metrics)
         if self.tracker != None:
