@@ -3,3 +3,4 @@ accelerate
 evaluate
 transformers
 diffusers[training]
+PyDrive

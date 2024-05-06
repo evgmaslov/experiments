@@ -1,4 +1,5 @@
 {
+    "checkpoint_hub":"1qPFmuFZJ-pZdUhwBnUarg4fMIpj3Uht0",
     "resume_from_checkpoint":false,
     "evaluation_strategy":"epoch",
     "save_strategy":"epoch",
