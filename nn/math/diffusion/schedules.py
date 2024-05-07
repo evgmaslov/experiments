@@ -79,18 +79,18 @@ class NoiseSchedule():
         
     def get_step_values(self, t: torch.Tensor, shape: None) -> Dict:
         values = {
-            "betas":torch.from_numpy(self.betas)[t],
-            "alphas":torch.from_numpy(self.alphas)[t],
-            "alphas_cumprod":torch.from_numpy(self.alphas_cumprod)[t],
-            "sqrt_alphas_cumprod":torch.from_numpy(self.sqrt_alphas_cumprod)[t],
-            "sqrt_one_minus_alphas_cumprod":torch.from_numpy(self.sqrt_one_minus_alphas_cumprod)[t],
-            "log_one_minus_alphas_cumprod":torch.from_numpy(self.log_one_minus_alphas_cumprod)[t],
-            "sqrt_recip_alphas_cumprod":torch.from_numpy(self.sqrt_recip_alphas_cumprod)[t],
-            "sqrt_recipm1_alphas_cumprod":torch.from_numpy(self.sqrt_recipm1_alphas_cumprod)[t],
-            "posterior_variance":torch.from_numpy(self.posterior_variance)[t],
-            "posterior_log_variance_clipped":torch.from_numpy(self.posterior_log_variance_clipped)[t],
-            "posterior_mean_coef1":torch.from_numpy(self.posterior_mean_coef1)[t],
-            "posterior_mean_coef2":torch.from_numpy(self.posterior_mean_coef2)[t],
+            "betas":torch.from_numpy(self.betas).to(t.device)[t],
+            "alphas":torch.from_numpy(self.alphas).to(t.device)[t],
+            "alphas_cumprod":torch.from_numpy(self.alphas_cumprod).to(t.device)[t],
+            "sqrt_alphas_cumprod":torch.from_numpy(self.sqrt_alphas_cumprod).to(t.device)[t],
+            "sqrt_one_minus_alphas_cumprod":torch.from_numpy(self.sqrt_one_minus_alphas_cumprod).to(t.device)[t],
+            "log_one_minus_alphas_cumprod":torch.from_numpy(self.log_one_minus_alphas_cumprod).to(t.device)[t],
+            "sqrt_recip_alphas_cumprod":torch.from_numpy(self.sqrt_recip_alphas_cumprod).to(t.device)[t],
+            "sqrt_recipm1_alphas_cumprod":torch.from_numpy(self.sqrt_recipm1_alphas_cumprod).to(t.device)[t],
+            "posterior_variance":torch.from_numpy(self.posterior_variance).to(t.device)[t],
+            "posterior_log_variance_clipped":torch.from_numpy(self.posterior_log_variance_clipped).to(t.device)[t],
+            "posterior_mean_coef1":torch.from_numpy(self.posterior_mean_coef1).to(t.device)[t],
+            "posterior_mean_coef2":torch.from_numpy(self.posterior_mean_coef2).to(t.device)[t],
         }
         if shape == None:
             return values

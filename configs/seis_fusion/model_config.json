@@ -23,7 +23,7 @@
         "clip_denoised": true,
         "rescale_timesteps": false,
         "mean_type": "epsilon",
-        "variance_type": "fixed"
+        "variance_type": "learned"
     },
     "loss":"MSELoss",
     "gama":0.5,

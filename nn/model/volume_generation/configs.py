@@ -1,5 +1,5 @@
 from ..base import ModelConfig
-from ...math.diffusion.schedulers import SchedulerConfig
+from ...math.diffusion.schedulers import SchedulerConfig, SeisFusionSchedulerConfig
 from typing import Tuple, Any
 from dataclasses import dataclass
 
@@ -43,6 +43,7 @@ class DiffusionConfig(ModelConfig):
 
 @dataclass
 class SeisFusionConfig(DiffusionConfig):
+  scheduler_config: SeisFusionSchedulerConfig
   gama: float = 0.5
   u: int = 10
 

@@ -38,7 +38,8 @@ class DiffusersScheduler():
         return self.scheduler.step(*args, **kwargs)
     def add_noise(self, *args, **kwargs):
         return self.scheduler.add_noise(*args, **kwargs)
-    
+
+@dataclass  
 class SeisFusionSchedulerConfig(SchedulerConfig):
     beta_rescaling: bool = False
     respacing: List = None
@@ -52,8 +53,8 @@ class SeisFusionScheduler():
     def __init__(self, config: SeisFusionSchedulerConfig):
         mean_types = ["epsilon", "fixed"]
         variance_types = ["learned", "learned_large", "fixed", "fixed_large"]
-        assert config.mean_type in mean_types, f"Mean type should be in {", ".join(mean_types)}"
-        assert config.variance_type in variance_types, f"Variance type should be in {", ".join(variance_types)}"
+        assert config.mean_type in mean_types, f"Mean type should be in {', '.join(mean_types)}"
+        assert config.variance_type in variance_types, f"Variance type should be in {', '.join(variance_types)}"
 
         self.config = config
 

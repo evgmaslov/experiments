@@ -212,7 +212,7 @@ class UNetModel(nn.Module):
                             out_channels=out_ch,
                             dims=dims,
                             use_scale_shift_norm=use_scale_shift_norm,
-                            up=self.updown_scale,
+                            upsample=self.updown_scale,
                             zero_last_conv=True,
                             norm_groups=32,
                         )
