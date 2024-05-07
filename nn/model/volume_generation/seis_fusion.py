@@ -5,6 +5,7 @@ from ..utils.initialization import zero
 from .configs import SeisFusionConfig
 from ...math.diffusion import STRING_TO_SCHEDULER
 from ...train.loss import STRING_TO_LOSS
+from ...math.statistics.divergence import kl_divergence, discretized_gaussian_log_likelihood
 
 from typing import Dict
 from transformers.utils import ModelOutput
@@ -345,12 +346,21 @@ class SeisFusion(Model):
         noise = torch.randn_like(x0).to(x0.device)
         x_t = self.scheduler.add_noise(volume, noise, t)
 
-        last_step_times = t == 0
-        gt_t = self.scheduler.add_noise(condition, noise, t-1)
-        gt_t[last_step_times] = condition[last_step_times]
-        model_output = self.eps_model(x_t, t, gt_t)
+        t_model = self.scheduler.transform_timesteps(t)
+        model_output = self.eps_model(x_t, t_model, condition)
         
-        loss = self.loss(model_output, noise)
+        loss = None
+        if self.config.scheduler_config.loss_type == "kl":
+            loss = self.compute_kl_loss(x0, x_t, model_output, t)
+        elif self.config.scheduler_config.loss_type == "mse":
+            target = noise
+            if self.config.scheduler_config.mean_type == "previous_x":
+                target = self.scheduler.q_posterior_mean_variance(x0, x_t, t)
+            loss = nn.MSELoss()(model_output, target)
+            if self.config.scheduler_config.var_type == "learned":
+                vb_loss = self.compute_kl_loss(x0, x_t, model_output, t)
+                loss = loss + vb_loss
+
         output = ModelOutput()
         output["loss"] = loss
         return output
@@ -369,18 +379,42 @@ class SeisFusion(Model):
         if print_output:
             self.show_outputs(x)
         return output
+    
     def guided_sampling_step(self, x_t, t, condition, mask):
         time = t[0].item()
-        beta = self.scheduler.betas[time-1]
         for i in range(self.config.u):
             noise = torch.randn_like(x_t) if time > 0 else torch.zeros_like(x_t)
             gt_t = self.scheduler.add_noise(condition, noise, t)
             x_t = gt_t*mask + x_t*(1-mask)
-            eps = self.eps_model(x_t, t, condition)
-            x_t1 = self.scheduler.step(eps, t, x_t).prev_sample
+            eps = self.eps_model(x_t, t, condition*mask)
+            t_model = self.scheduler.transform_timesteps(t)
+            x_t1 = self.scheduler.step(eps, t_model, x_t).prev_sample
             if i != self.config.u - 1 and time > 0:
                 x_t = self.scheduler.add_noise_step(x_t1, noise, t)
         return x_t
+    
+    def compute_kl_loss(self, x_0, x_t, model_output, t):
+        sample, means, variances = self.scheduler.step(model_output, t, x_t, return_mean_and_var=True)
+        model_mean = means["mean"]
+        model_log_variance = variances["log_variance"]
+
+        true_mean, _, true_log_variance_clipped = self.scheduler.q_posterior_mean_variance(
+            x_start=x_0, x_t=x_t, t=t
+        )
+        kl = kl_divergence(
+            true_mean, true_log_variance_clipped, model_mean, model_log_variance
+        )
+        kl = kl.mean(dim=list(range(1, len(kl.shape)))) / np.log(2.0)
+
+        decoder_nll = -discretized_gaussian_log_likelihood(
+            x_0, means=model_mean, log_scales=0.5 * model_log_variance
+        )
+        decoder_nll = decoder_nll.mean(dim=list(range(1, len(decoder_nll.shape)))) / np.log(2.0)
+
+        # At the first timestep return the decoder NLL,
+        # otherwise return KL(q(x_{t-1}|x_t,x_0) || p(x_{t-1}|x_t))
+        output = torch.where((t == 0), decoder_nll, kl)
+        return output.mean()
             
     def show_outputs(self, x):
         x = x[:,0,:,:,:].squeeze(1)

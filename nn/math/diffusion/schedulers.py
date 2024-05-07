@@ -45,7 +45,8 @@ class SeisFusionSchedulerConfig(SchedulerConfig):
     clip_denoised: bool = True
     rescale_timesteps: bool = False
     mean_type: str = "epsilon"
-    variance_type: str = "fixed"
+    variance_type: str = "learned"
+    loss_type: str = "mse"
 
 class SeisFusionScheduler():
     def __init__(self, config: SeisFusionSchedulerConfig):
@@ -66,7 +67,7 @@ class SeisFusionScheduler():
                                       respacing=self.respacing)
         self.timesteps = self.schedule.timesteps
         
-    def step(self, eps: torch.Tensor, t: torch.Tensor, x_t: torch.Tensor):
+    def step(self, eps: torch.Tensor, t: torch.Tensor, x_t: torch.Tensor, return_mean_and_var: bool = False):
         means = self.get_step_mean(eps, x_t, t)
         variances = self.get_step_variance(eps, x_t, t)
 
@@ -77,14 +78,17 @@ class SeisFusionScheduler():
 
         sample = means["mean"] + nonzero_mask * torch.exp(0.5 * variances["log_variance"]) * noise
         output = DDPMSchedulerOutput(prev_sample=sample, pred_original_sample=means["pred_xstart"])
-        return output
+        if return_mean_and_var:
+            return output, means, variances
+        else:
+            return output
     
     def get_step_mean(self, model_output: torch.Tensor, model_input: torch.Tensor, t: torch.Tensor) -> Dict:
         step_values = self.schedule.get_step_values(t, model_input.shape)
         pred_xstart = None
         if self.config.mean_type == "epsilon":
             pred_xstart = step_values["sqrt_recip_alphas_cumprod"]*model_input + step_values["sqrt_recipm1_alphas_cumprod"]*model_output
-        elif self.config.mean_type == "previos_x":
+        elif self.config.mean_type == "previous_x":
             pred_xstart = 1/step_values["posterior_mean_coef1"]*model_output + step_values["posterior_mean_coef2"]*model_input
 
         if self.config.clip_denoised:
@@ -154,3 +158,17 @@ class SeisFusionScheduler():
                      torch.sqrt(beta) * noise
 
         return img_in_est
+    
+    def q_posterior_mean_variance(self, x_start: torch.Tensor, x_t: torch.Tensor, t: torch.Tensor) -> Tuple[torch.Tensor]:
+        """
+        Compute the mean and variance of the diffusion posterior:
+
+            q(x_{t-1} | x_t, x_0)
+
+        """
+        step_values = self.schedule.get_step_values(t, x_start.shape)
+        posterior_mean = step_values["posterior_mean_coef1"] * x_start + step_values["posterior_mean_coef2"] * x_t
+        
+        posterior_variance = step_values["posterior_variance"]
+        posterior_log_variance_clipped = step_values["posterior_log_variance_clipped"]
+        return posterior_mean, posterior_variance, posterior_log_variance_clipped
