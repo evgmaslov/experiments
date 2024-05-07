@@ -97,7 +97,9 @@ class PrintOutputsCallback(TrainerCallback):
         self.tracker = tracker
         self.epoch_counter = 0
     def on_evaluate(self, args, state, control, eval_dataloader, **kwargs):
-        if not state.is_world_process_zero or not hasattr(state, "trainer") or self.tracker.printer == None or self.tracker.config.print_outputs_freq % self.epoch_counter != 0:
+        if not state.is_world_process_zero or not hasattr(state, "trainer") or self.tracker.printer == None:
+            return
+        if not (self.epoch_counter % self.tracker.config.print_outputs_freq == 0 or (self.epoch_counter == 1 and self.tracker.config.print_first)):
             return
         indexes = random.sample(range(len(eval_dataloader.dataset)), self.tracker.config.num_outputs)
         inputs = [eval_dataloader.dataset[i] for i in indexes]
@@ -129,6 +131,7 @@ class TrackerConfig:
     printer_type: str = ""
     print_outputs_freq: int = 1
     num_outputs: int = 1
+    print_first: bool = True
 
     def to_dict(self):
         d = {field.name: getattr(self, field.name) for field in fields(self) if field.init}

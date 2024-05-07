@@ -385,11 +385,12 @@ class SeisFusion(Model):
         time = t[0].item()
         for i in range(self.config.u):
             noise = torch.randn_like(x_t) if time > 0 else torch.zeros_like(x_t)
-            gt_t = self.scheduler.add_noise(condition, noise, t)
+            gt_t = self.scheduler.add_noise(condition, noise, t).type(noise.dtype)
             x_t = gt_t*mask + x_t*(1-mask)
-            eps = self.eps_model(x_t, t, condition*mask)
             t_model = self.scheduler.transform_timesteps(t)
-            x_t1 = self.scheduler.step(eps, t_model, x_t).prev_sample
+            masked_condition = condition*mask
+            eps = self.eps_model(x_t.float(), t_model.float(), masked_condition.float())
+            x_t1 = self.scheduler.step(eps, t, x_t).prev_sample
             if i != self.config.u - 1 and time > 0:
                 x_t = self.scheduler.add_noise_step(x_t1, noise, t)
         return x_t

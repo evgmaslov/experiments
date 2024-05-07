@@ -17,6 +17,7 @@
         "print_outputs": true,
         "printer_type": "VolumePrinterWithCondition",
         "print_outputs_freq": 5,
-        "num_outputs": 1
+        "num_outputs": 1,
+        "print_first":true
     }
 }
