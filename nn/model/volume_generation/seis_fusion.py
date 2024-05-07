@@ -335,6 +335,8 @@ class SeisFusion(Model):
         assert scheduler_type != None, f"Scheduler can't be {config.scheduler_config.type}, define right scheduler type in scheduler config"
         self.scheduler = scheduler_type(config.scheduler_config)
 
+        self.mse = nn.MSELoss()
+
     def forward(self, volume, mask, return_loss=True) -> ModelOutput:
         condition = torch.mul(volume, mask)
         x0 = volume
@@ -351,16 +353,19 @@ class SeisFusion(Model):
             model_mean = model_output
         
         loss = None
-        if self.config.scheduler_config.loss_type == "kl":
-            loss = self.compute_kl_loss(x0, x_t, model_output, t)
-        elif self.config.scheduler_config.loss_type == "mse":
-            target = noise
-            if self.config.scheduler_config.mean_type == "previous_x":
-                target = self.scheduler.q_posterior_mean_variance(x0, x_t, t)
-            loss = nn.MSELoss()(model_mean, target)
-            if self.config.scheduler_config.variance_type == "learned":
-                vb_loss = self.compute_kl_loss(x0, x_t, model_output, t)
-                loss = loss + vb_loss
+        if self.config.scheduler_config.type == "SeisFusionScheduler":
+            if self.config.scheduler_config.loss_type == "kl":
+                loss = self.compute_kl_loss(x0, x_t, model_output, t)
+            elif self.config.scheduler_config.loss_type == "mse":
+                target = noise
+                if self.config.scheduler_config.mean_type == "previous_x":
+                    target = self.scheduler.q_posterior_mean_variance(x0, x_t, t)
+                loss = self.mse(model_mean, target)
+                if self.config.scheduler_config.variance_type == "learned":
+                    vb_loss = self.compute_kl_loss(x0, x_t, model_output, t)
+                    loss = loss + vb_loss
+        else:
+            loss = self.mse(model_mean, noise)
 
         output = ModelOutput()
         output["loss"] = loss
@@ -387,7 +392,9 @@ class SeisFusion(Model):
             noise = torch.randn_like(x_t) if time > 0 else torch.zeros_like(x_t)
             gt_t = self.scheduler.add_noise(condition, noise, t).type(noise.dtype)
             x_t = gt_t*mask + x_t*(1-mask)
-            t_model = self.scheduler.transform_timesteps(t)
+            t_model = t
+            if self.config.scheduler_config.type == "SeisFusionScheduler":
+                t_model = self.scheduler.transform_timesteps(t)
             masked_condition = condition*mask
             eps = self.eps_model(x_t.float(), t_model.float(), masked_condition.float())
             x_t1 = self.scheduler.step(eps, t, x_t).prev_sample

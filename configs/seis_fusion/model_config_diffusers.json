@@ -16,8 +16,8 @@
     "resblock_updown": true,
     "split_qkv_before_heads": false,
     "scheduler_config":{
-        "type":"SeisFusionScheduler",
-        "num_train_timesteps":1000,
+        "type":"DDPMScheduler",
+        "num_train_timesteps":250,
         "beta_schedule": "linear",
         "beta_rescaling": false,
         "respacing": [250],
