@@ -345,7 +345,9 @@ class SeisFusion(Model):
         noise = torch.randn_like(x0).to(x0.device)
         x_t = self.scheduler.add_noise(volume, noise, t).type(x0.dtype)
 
-        t_model = self.scheduler.transform_timesteps(t)
+        t_model = t
+        if self.config.scheduler_config.type == "SeisFusionScheduler":
+            t_model = self.scheduler.transform_timesteps(t)
         model_output = self.eps_model(x_t, t_model, condition)
         if self.config.scheduler_config.variance_type in ("learned", "learned_range"):
             model_mean, model_var = torch.chunk(model_output, 2, dim=1)

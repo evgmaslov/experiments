@@ -39,7 +39,8 @@ class DiffusersScheduler():
     def add_noise(self, *args, **kwargs):
         return self.scheduler.add_noise(*args, **kwargs)
     def add_noise_step(self, x: torch.Tensor, noise: torch.Tensor, t: torch.Tensor) -> torch.Tensor:
-        betas = self.betas[t]
+        betas = self.betas.to(t.device)
+        betas = betas[t]
         img_in_est = torch.sqrt(1 - betas) * x + torch.sqrt(betas) * noise
         return img_in_est
 
