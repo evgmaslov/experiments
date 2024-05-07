@@ -8,7 +8,7 @@
     "fp16":true,
     "remove_unused_columns":false,
     "output_dir":"/kaggle/working/",
-    "num_train_epochs":60,
+    "num_train_epochs":90,
     "per_device_train_batch_size":4,
     "per_device_eval_batch_size":4,
     "tracker_type": "Tracker",
