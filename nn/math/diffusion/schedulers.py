@@ -86,6 +86,9 @@ class SeisFusionScheduler():
     
     def get_step_mean(self, model_output: torch.Tensor, model_input: torch.Tensor, t: torch.Tensor) -> Dict:
         step_values = self.schedule.get_step_values(t, model_input.shape)
+        if self.config.variance_type in ("learned", "learned_range"):
+            model_output, model_var_values = torch.chunk(model_output, 2, dim=1)
+
         pred_xstart = None
         if self.config.mean_type == "epsilon":
             pred_xstart = step_values["sqrt_recip_alphas_cumprod"]*model_input + step_values["sqrt_recipm1_alphas_cumprod"]*model_output
@@ -105,11 +108,11 @@ class SeisFusionScheduler():
         model_variance = None
         model_log_variance = None
         if self.config.variance_type == "learned":
-            model_output, model_var_values = torch.split(model_output, c, dim=1)
+            model_output, model_var_values = torch.chunk(model_output, c, dim=1)
             model_log_variance = model_var_values
             model_variance = torch.exp(model_var_values)
         elif self.config.variance_type == "learned_range":
-            model_output, model_var_values = torch.split(model_output, c, dim=1)
+            model_output, model_var_values = torch.chunk(model_output, c, dim=1)
             min_log = step_values["posterior_log_variance_clipped"]
             max_log = torch.log(step_values["betas"])
 

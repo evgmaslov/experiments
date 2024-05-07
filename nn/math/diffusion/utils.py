@@ -21,7 +21,7 @@ class Respacing():
         return new_betas
     
     def respaced_timesteps_to_base(self, t: torch.Tensor):
-        map_tensor = torch.Tensor(self.respaced_timesteps, device=t.device, dtype=t.dtype)
+        map_tensor = torch.Tensor(self.respaced_timesteps, device=t.device).type(t.dtype)
         new_t = map_tensor[t]
         return new_t
 

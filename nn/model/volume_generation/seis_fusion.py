@@ -319,7 +319,7 @@ class SeisFusion(Model):
             gama=config.gama,
             in_channels=config.sample_channels,
             model_channels=config.model_channels,
-            out_channels=config.sample_channels,
+            out_channels=config.sample_channels if not config.scheduler_config.variance_type in ("learned", "learned_range") else config.sample_channels*2,
             num_res_blocks=config.layers_per_block,
             attention_resolutions=config.attn_res,
             dropout=config.dropout,
@@ -334,20 +334,21 @@ class SeisFusion(Model):
         scheduler_type = STRING_TO_SCHEDULER.get(config.scheduler_config.type, None)
         assert scheduler_type != None, f"Scheduler can't be {config.scheduler_config.type}, define right scheduler type in scheduler config"
         self.scheduler = scheduler_type(config.scheduler_config)
-        loss_type = STRING_TO_LOSS.get(config.loss, None)
-        assert loss_type != None, f"Loss can't be {config.loss}, define right loss in the config"
-        self.loss = loss_type()
 
     def forward(self, volume, mask, return_loss=True) -> ModelOutput:
         condition = torch.mul(volume, mask)
         x0 = volume
         batch_size = x0.shape[0]
-        t = torch.randint(0, self.scheduler.config.num_train_timesteps, (batch_size,), device=x0.device, dtype=torch.long)
+        t = torch.randint(0, len(self.scheduler.timesteps), (batch_size,), device=x0.device, dtype=torch.long)
         noise = torch.randn_like(x0).to(x0.device)
-        x_t = self.scheduler.add_noise(volume, noise, t)
+        x_t = self.scheduler.add_noise(volume, noise, t).type(x0.dtype)
 
         t_model = self.scheduler.transform_timesteps(t)
         model_output = self.eps_model(x_t, t_model, condition)
+        if self.config.scheduler_config.variance_type in ("learned", "learned_range"):
+            model_mean, model_var = torch.chunk(model_output, 2, dim=1)
+        else:
+            model_mean = model_output
         
         loss = None
         if self.config.scheduler_config.loss_type == "kl":
@@ -356,8 +357,8 @@ class SeisFusion(Model):
             target = noise
             if self.config.scheduler_config.mean_type == "previous_x":
                 target = self.scheduler.q_posterior_mean_variance(x0, x_t, t)
-            loss = nn.MSELoss()(model_output, target)
-            if self.config.scheduler_config.var_type == "learned":
+            loss = nn.MSELoss()(model_mean, target)
+            if self.config.scheduler_config.variance_type == "learned":
                 vb_loss = self.compute_kl_loss(x0, x_t, model_output, t)
                 loss = loss + vb_loss
 

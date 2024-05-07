@@ -44,7 +44,8 @@ class NoiseSchedule():
         if respacing != None:
             betas = respacing.respace_betas(betas)
             self.num_timesteps = len(betas)
-            self.timesteps = respacing.respaced_timesteps[::-1]
+            self.respaced_timesteps = respacing.respaced_timesteps[::-1]
+            self.timesteps = range(len(self.respaced_timesteps))[::-1]
 
         self.betas = np.array(betas, dtype=np.float64)
         
