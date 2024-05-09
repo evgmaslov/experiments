@@ -8,7 +8,7 @@
     "fp16":true,
     "remove_unused_columns":false,
     "output_dir":"/kaggle/working",
-    "num_train_epochs":60,
+    "num_train_epochs":70,
     "per_device_train_batch_size":4,
     "per_device_eval_batch_size":4,
     "tracker_type": "Tracker",
@@ -16,7 +16,7 @@
         "metrics": [],
         "print_outputs": true,
         "printer_type": "VolumePrinterWithCondition",
-        "print_outputs_freq": 5,
+        "print_outputs_freq": 1,
         "num_outputs": 1,
         "print_first":true
     }

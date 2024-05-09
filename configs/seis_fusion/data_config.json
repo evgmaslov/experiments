@@ -8,5 +8,5 @@
         "condition_sampling_weights": [1, 1]
     },
     "split":0.1,
-    "use_size":0.1
+    "use_size":1
 }

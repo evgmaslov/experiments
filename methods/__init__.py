@@ -75,14 +75,14 @@ class MLMethod(Method):
         elif step_name == "train":
             self.train()
 
-    def load_step(self, path: str, step_name: str, load_from: str = "hub"):
+    def load_step(self, step_name: str, path: str = None, load_from: str = "hub"):
         super().load_step(path, step_name)
         if step_name == "prepare_data":
-            self.load_data()
+            self.load_data(path, load_from)
         elif step_name == "train":
-            self.model = self.model_type.from_pretrained(self.config.model_config.path, config=self.config.model_config)
+            self.model = self.load_train(path, load_from)
             
-    def save_step(self, path: str, step_name: str, save_to: str = "hub"):
+    def save_step(self, step_name: str, path: str = None, save_to: str = "hub"):
         super().save_step(path, step_name)
         if step_name == "prepare_data":
             self.save_data(path, save_to)
@@ -95,19 +95,43 @@ class MLMethod(Method):
         converter = self.converter_type()
         self.dataset = converter(**self.config.task_config.data)
         self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
-    def load_data(self):
+    def load_data(self, path, load_from):
+        if path == None:
+            path = self.config.data_config.path
+
         self.dataset = load_dataset(self.config.data_config.path).with_format("torch")
         if not isinstance(self.dataset, datasets.dataset_dict.DatasetDict):
             self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
         for split in self.dataset.keys():
             new_count = int(len(self.dataset[split])*self.config.data_config.use_size)
             self.dataset[split] = self.dataset[split].select(range(new_count))
-    def save_data(self, path: str, save_to: str = "hub"):
+    def save_data(self, path: str = None, save_to: str = "hub"):
+        if path == None:
+            path = self.config.data_config.path
         if save_to == "hub":
             self.dataset.push_to_hub(path)
         elif save_to == "dir":
             self.dataset.save_to_disk(path)
     
+    def load_train(self, path: str, load_from: str = "hub"):
+        if path == None:
+            path = self.config.model_config.path
+        self.model = self.model_type.from_pretrained(path, config=self.config.model_config)
+
+    def save_train(self, path: str = None, save_to: str = "hub"):
+        if path == None:
+            path = self.config.model_config.path
+        if self.config.train_config.hub_model_id == None:
+            self.trainer.args.hub_model_id = path
+        
+        if self.trainer != None:
+            self.trainer.push_to_hub()
+        elif self.model != None:
+            if save_to == "hub":
+                self.model.push_to_hub(path)
+            elif save_to == "dir":
+                self.model.save_pretrained(path)
+        
     def train(self):
         if self.model == None:
             self.model = self.model_type(self.config.model_config)
