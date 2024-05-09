@@ -88,15 +88,16 @@ class MLMethod(Method):
                 printer = printer_type()
         
         device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = self.model.to(device)
         preds = None
         for batch in dataloader:
-            for key in batch.keys():
-                batch[key] = batch[key].to(device)
-
             if visualize:
                 print("Input:")
                 printer(batch)
                 print("Output:")
+
+            for key in batch.keys():
+                batch[key] = batch[key].to(device)
 
             batch_preds = self.model.inference(batch, print_output=visualize)
             if preds == None:
