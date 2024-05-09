@@ -1,8 +1,14 @@
 {
-    "name":"Polycrystal structure generation",
-    "input_type":"GenerationTaskIntput",
-    "output_type":"GenerationTaskOutput",
-    "data":{
-        "path":"dataset"
+    "name":"Polycrystal structure generation with condition",
+    "input_type":"TaskIntput",
+    "output_type":"TaskOutput",
+    "train_data":{
+        "path":"evgmaslov/polycrystal_3d"
+    },
+    "test_data":{
+        "path":"evgmaslov/polycrystal_3d"
+    },
+    "test_data_converter_config":{
+        "type":"LoadDatasetConverter"
     }
 }

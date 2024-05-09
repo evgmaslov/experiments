@@ -1,7 +1,9 @@
 {
     "name":"Polycristal dataset",
     "path":"evgmaslov/polycrystal_3d",
-    "converter_type":"TesrConverter",
+    "converter_config":{
+        "type":"TesrConverter"
+    },
     "collator_config":{
         "type":"TesrCollatorWithCondition",
         "condition_views": [[2, 0, 0], [2, 1, 0]],

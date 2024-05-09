@@ -1,13 +1,18 @@
 from tasks import TaskInput, TaskOutput, TaskConfig, MLTaskConfig, STRING_TO_TASK_INPUT, STRING_TO_TASK_OUTPUT
 from dataclasses import dataclass, fields, field
 from typing import List, Any
-from nn.data import Converter, DataConfig, STRING_TO_CONVERTER, STRING_TO_COLLATOR
+from nn.data import STRING_TO_CONVERTER, STRING_TO_COLLATOR
+from nn.data.base import DataConfig
 from nn.model import STRING_TO_MODEL
 from nn.model.base import ModelConfig
 from nn.train import TrainerConfig, Trainer
 import datasets
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 from transformers import default_data_collator
+from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
+import torch
+from ..nn.data import STRING_TO_PRINTER
 
 @dataclass
 class MethodConfig:
@@ -54,7 +59,7 @@ class Method():
 class MLMethod(Method):
     def __init__(self, config: MLMethodConfig):
         super().__init__(config)
-        self.converter_type = STRING_TO_CONVERTER.get(config.data_config.converter_type, None)
+        self.converter_type = STRING_TO_CONVERTER.get(config.data_config.converter_config.type, None)
         self.collator_type = STRING_TO_COLLATOR.get(config.data_config.collator_config.type, None)
         self.model_type = STRING_TO_MODEL.get(config.model_config.type, None)
 
@@ -65,8 +70,45 @@ class MLMethod(Method):
         self.model = None
         self.trainer = None
 
-    def solve(self, task_input: TaskInput) -> TaskOutput:
+    def solve(self, task_input: TaskInput, visualize: bool = False) -> TaskOutput:
         super().solve(task_input)
+        dataset = Dataset.from_dict(task_input)
+        if self.collator_type != None:
+            collator = self.collator_type(self.config.data_config.collator_config)
+        else:
+            collator = None
+        dataloader = DataLoader(dataset, batch_size=self.config.train_config.per_device_eval_batch_size, shuffle=False, collate_fn=collator)
+
+        if visualize:
+            printer_type = STRING_TO_PRINTER.get(self.config.train_config.tracker_config.printer_type, None)
+            if printer_type == None:
+                printer = None
+            else:
+                printer = printer_type()
+        
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        preds = None
+        for batch in dataloader:
+            for key in batch.keys():
+                batch[key] = batch[key].to(device)
+
+            if visualize:
+                print("Input:")
+                printer(batch)
+                print("Output:")
+
+            batch_preds = self.model.inference(batch, print_output=visualize)
+            if preds == None:
+                preds = batch_preds
+            else:
+                for key in preds.keys():
+                    preds[key] = torch.cat([preds[key], batch_preds[key]], dim=0)
+        
+        output = TaskOutput()
+        for key in preds.keys():
+            output[key] = preds[key]
+        return output
+        
 
     def run_step(self, step_name: str):
         super().run_step(step_name)
@@ -74,26 +116,22 @@ class MLMethod(Method):
             self.prepare_data()
         elif step_name == "train":
             self.train()
-
     def load_step(self, step_name: str, path: str = None, load_from: str = "hub"):
         super().load_step(path, step_name)
         if step_name == "prepare_data":
             self.load_data(path, load_from)
         elif step_name == "train":
-            self.model = self.load_train(path, load_from)
-            
+            self.load_train(path, load_from)
     def save_step(self, step_name: str, path: str = None, save_to: str = "hub"):
         super().save_step(path, step_name)
         if step_name == "prepare_data":
             self.save_data(path, save_to)
         elif step_name == "train":
-            if self.config.train_config.hub_model_id == None:
-                self.trainer.args.hub_model_id = self.config.model_config.path
-            self.trainer.push_to_hub()
+            self.save_train(path, save_to)
 
     def prepare_data(self):
-        converter = self.converter_type()
-        self.dataset = converter(**self.config.task_config.data)
+        converter = self.converter_type(self.config.data_config.converter_config)
+        self.dataset = converter(self.config.task_config.data)
         self.dataset = self.dataset.train_test_split(test_size=self.config.data_config.split, shuffle=True, seed=42)
     def load_data(self, path, load_from):
         if path == None:
@@ -117,21 +155,19 @@ class MLMethod(Method):
         if path == None:
             path = self.config.model_config.path
         self.model = self.model_type.from_pretrained(path, config=self.config.model_config)
-
     def save_train(self, path: str = None, save_to: str = "hub"):
         if path == None:
             path = self.config.model_config.path
-        if self.config.train_config.hub_model_id == None:
-            self.trainer.args.hub_model_id = path
         
         if self.trainer != None:
+            if self.config.train_config.hub_model_id == None:
+                self.trainer.args.hub_model_id = path
             self.trainer.push_to_hub()
         elif self.model != None:
             if save_to == "hub":
                 self.model.push_to_hub(path)
             elif save_to == "dir":
-                self.model.save_pretrained(path)
-        
+                self.model.save_pretrained(path)  
     def train(self):
         if self.model == None:
             self.model = self.model_type(self.config.model_config)
