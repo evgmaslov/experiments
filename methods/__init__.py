@@ -1,4 +1,5 @@
-from tasks import TaskInput, TaskOutput, TaskConfig, MLTaskConfig, STRING_TO_TASK_INPUT, STRING_TO_TASK_OUTPUT
+from tasks.base import TaskInput, TaskOutput, TaskConfig, MLTaskConfig
+from tasks import STRING_TO_TASK_INPUT, STRING_TO_TASK_OUTPUT
 from dataclasses import dataclass, fields, field
 from typing import List, Any
 from nn.data import STRING_TO_CONVERTER, STRING_TO_COLLATOR
@@ -12,7 +13,7 @@ from transformers import default_data_collator
 from torch.utils.data import DataLoader
 from tqdm.auto import tqdm
 import torch
-from ..nn.data import STRING_TO_PRINTER
+from experiments.nn.data import STRING_TO_PRINTER
 
 @dataclass
 class MethodConfig:

@@ -1,8 +1,8 @@
 from collections import OrderedDict
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Tuple
 from dataclasses import dataclass, fields
-from ..nn.data import STRING_TO_CONVERTER
-from ..nn.data.base import ConverterConfig
+from experiments.nn.data import STRING_TO_CONVERTER
+from experiments.nn.data.base import ConverterConfig
 from datasets import get_dataset_split_names
 
 class TaskInput(OrderedDict):
@@ -12,6 +12,8 @@ class TaskInput(OrderedDict):
             return inner_dict[k]
         else:
             return self.to_tuple()[k]
+    def to_tuple(self) -> Tuple[Any]:
+        return tuple(self[k] for k in self.keys())
 
 class TaskOutput(OrderedDict):
     def __getitem__(self, k):
@@ -20,6 +22,8 @@ class TaskOutput(OrderedDict):
             return inner_dict[k]
         else:
             return self.to_tuple()[k]
+    def to_tuple(self) -> Tuple[Any]:
+        return tuple(self[k] for k in self.keys())
         
 @dataclass
 class TaskConfig:
@@ -48,11 +52,11 @@ class MLTaskConfig(TaskConfig):
 class MLTask(Task):
     def __init__(self, config: TaskConfig):
         super().__init__(config)
-        self.converter_type = STRING_TO_CONVERTER.get(config.data_converter, None)
-        assert self.converter_type != None, f"Converter type {config.data_config.converter_type} isn't registered."
+        self.converter_type = STRING_TO_CONVERTER.get(config.test_data_converter_config.type, None)
+        assert self.converter_type != None, f"Converter type {config.test_data_converter_config.type} isn't registered."
     
     def get_task_input(self, resize: float = None) -> TaskInput:
-        converter = self.converter_type()
+        converter = self.converter_type(self.config.test_data_converter_config)
         dataset = converter(self.config.test_data)
         task_input = TaskInput()
         splits = get_dataset_split_names(self.config.test_data["path"])
@@ -66,5 +70,5 @@ class MLTask(Task):
             if resize != None:
                 new_len = int(len(dataset)*resize)
                 data = data[:new_len]
-            task_input[key] = dataset[key]
+            task_input[key] = data
         return task_input

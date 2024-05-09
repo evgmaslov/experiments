@@ -8,7 +8,6 @@ from .printers import (
 from .converters import (
     TesrConverter,
     LoadDatasetConverter,
-    ComposeConverter,
 )
 from .collators import (
     TesrCollator,
@@ -20,7 +19,6 @@ STRING_TO_CONVERTER = {
     "Converter":Converter,
     "TesrConverter":TesrConverter,
     "LoadDatasetConverter":LoadDatasetConverter,
-    "ComposeConverter":ComposeConverter,
 }
 
 STRING_TO_COLLATOR = {
